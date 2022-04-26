@@ -37,7 +37,6 @@ class Output:
 
     # Final calculations to get output
     def Final_Calculations(self, input_cipher):
-
         self.evaluator.mod_switch_to_inplace(self.plain_weights1, input_cipher.parms_id())
         self.evaluator.mod_switch_to_inplace(self.plain_weights2, input_cipher.parms_id())
 
@@ -95,21 +94,18 @@ class Output:
         out2 = self.ckks_encoder.decode(self.decryptor.decrypt(out_cipher2_final))
 
         # print("Not Squared")
-        # print(out1[0])
-        # print(out2[0])
+
         out = np.zeros(2)
         if(out1[0] > out2[0]):
             out[0] = 1
         else:
             out[1] = 1
-        # print("Squared")
-        # print(out1[0] * out1[0])
-        # print(out2[0] * out2[0])
 
-        # print("Output 1 is: ", out1[6184])
-        # print("Output 2 is: ", out2[6184])
         return out
 
 # After Huge Performance improvements and testing #
 # Everything completerd on 02/04/2022 #
 # At 8:00 PM #
+# Fast Model prediction increase more than 1 second #
+# Completed On 26/04/2022 #
+# At 11;23 AM #

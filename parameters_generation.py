@@ -18,7 +18,7 @@ class SEALWork:
         # parms.set_coeff_modulus(CoeffModulus.Create(
         #     poly_modulus_degree, [60, 40, 40, 40, 40, 40, 40, 40, 60]))
         parms.set_coeff_modulus(CoeffModulus.Create(
-            poly_modulus_degree, [60, 50, 50, 50, 50, 50, 60]))
+            poly_modulus_degree, [60, 50, 50, 50, 50, 50, 50, 60]))
         scale = 2.0 ** 50
         context = SEALContext(parms)
         print_parameters(context)

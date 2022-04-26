@@ -4,6 +4,7 @@ from convolution import Convolution
 from pooling import Pooling
 from output import Output
 import time
+
 # from data_preprocessing import load_data
 import pickle
 
@@ -25,13 +26,11 @@ def main():
     print(f"Total Data is: {len(X)}")
     print("----------------------------------------")
     print("------Testing of HE CNN is started------")
-
     input_size = 28
 
     con = Convolution(8, seal_tuple, input_size)
-    pool = Pooling(2, seal_tuple, 14, 8, 28)
+    pool = Pooling(2, seal_tuple, 6272, 14, 8, 28)
     output = Output(392, 112, 0, seal_tuple)
-
     acc = 0
     print("----------------------------------------")
     print("Samples Used for Testing: 1000")
@@ -40,9 +39,9 @@ def main():
     for i in range(1000):
         checker = i
         # print("Real Prediction = ", Y[checker])
-        plain_input = ckks_encoder.encode(X[checker], scale)
+        plain_input = ckks_encoder.encode(X[i], scale)
         input_cipher = encryptor.encrypt(plain_input)
-        out, out_size, output_gap = con.Convolve(input_cipher)
+        out, out_size, total, output_gap = con.Convolve(input_cipher)
         out_size, rotations, out, output_gap = pool.Mean_Pool(out)
         out = output.Final_Calculations(out)
         if(out[0] == Y[checker][0]):
@@ -59,3 +58,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# ........................ #
+# Fast Model prediction increase more than 1 second #
+# Completed On 26/04/2022 #
+# At 11;23 AM #

@@ -32,7 +32,6 @@ class Convolution:
         with open('./Data/Approximate88/con_biases.pkl', 'rb') as file:
             biases = pickle.load(file)
         weights = weights.reshape(8, 4)
-
         self.input_size = input_size
         self.no_of_filters = no_of_filters
         self.encryptor, self.evaluator, self.decryptor, self.slot_count, self.context, self.ckks_encoder, self.scale, self.galois_keys, self.relin_keys = seal_tuple
@@ -41,8 +40,10 @@ class Convolution:
         # print(self.output_size)
         self.interval = input_size - self.k_s
         self.kernel_size = input_size * input_size
+        self.total = self.kernel_size * self.no_of_filters
         self.output_gap = self.input_size
         filters = np.zeros((self.no_of_filters, self.kernel_size))
+        f_biases = np.zeros((8, self.kernel_size))
         switch = 0
 
         for i in range(0, self.kernel_size, 2):
@@ -58,24 +59,37 @@ class Convolution:
                 if(switch == 1):
                     filters[item][i] = weights[item][2]
                     filters[item][i + 1] = weights[item][3]
-        self.filter_plain = []
-        self.biases_plain = []
-        for i in range(self.no_of_filters):
-            self.filter_plain.append(self.ckks_encoder.encode(filters[i], self.scale))
-            self.biases_plain.append(self.ckks_encoder.encode(biases[i], self.scale))
+        i = 0
+        while i < 784:
+            for j in range(0, self.input_size, 2):
+                for item in range(self.no_of_filters):
+                    f_biases[item][i + j] = biases[item]
+
+            i = i + (self.input_size * 2)
+        filter = filters[0]
+        biase_t = f_biases[0]
+        for i in range(1, self.no_of_filters):
+            filter = np.append(filter, filters[i])
+            biase_t = np.append(biase_t, f_biases[i])
+        # For covering whole available space with extra zeros
+        extra_bits = np.zeros(self.slot_count - len(filter))
+        filter = np.append(filter, extra_bits)
+        out = np.zeros(self.slot_count)
+        out[0:784] = 1
+        self.output = self.ckks_encoder.encode(out, self.scale)
+        self.filter_plain = self.ckks_encoder.encode(filter, self.scale)
+        self.biases_plain = self.ckks_encoder.encode(biase_t, self.scale)
         plain1 = np.zeros(self.slot_count)
         plain2 = np.zeros(self.slot_count)
         plain3 = np.zeros(self.slot_count)
         i = 0
-        while i < self.kernel_size:
+        while i < self.total:
             for j in range(0, self.input_size, 2):
                 plain1[i + j] = 0.009
                 plain2[i + j] = 0.50
                 plain3[i + j] = 0.47
             i = i + (self.input_size * 2)
-        # plain1 = 0.009
-        # plain2 = 0.50
-        # plain3 = 0.47
+
         self.plain_mul1 = self.ckks_encoder.encode(plain1, self.scale)
         self.plain_mul2 = self.ckks_encoder.encode(plain2, self.scale)
         self.plain_mul3 = self.ckks_encoder.encode(plain3, self.scale)
@@ -121,46 +135,36 @@ class Convolution:
 
     # Main convolution operation
     def Convolve(self, input_cipher):
-        # start = time.time()
+        # This part is also useful when there is input larger than 28x28
+        output = self.evaluator.multiply_plain(input_cipher, self.output)
+        self.evaluator.relinearize_inplace(output, self.relin_keys)
+        self.evaluator.rescale_to_next_inplace(output)
+        self.output.scale(2**50)
+        self.evaluator.rotate_vector_inplace(output, 784, self.galois_keys)
+        self.evaluator.add_inplace(output, self.evaluator.rotate_vector(output, -784, self.galois_keys))
+        self.evaluator.rotate_vector_inplace(output, 784, self.galois_keys)
+        self.evaluator.add_inplace(output, self.evaluator.rotate_vector(output, -(784 * 2), self.galois_keys))
+        self.evaluator.rotate_vector_inplace(output, 784 * 2, self.galois_keys)
+        self.evaluator.add_inplace(output, self.evaluator.rotate_vector(output, -(784 * 4), self.galois_keys))
+        self.evaluator.rotate_vector_inplace(output, -(784 * 4), self.galois_keys)
+        # Now 8 inputs for 8 filters are prepared to be multiplied only once
+
         # multiplying prepared plain kernel with input
 
-        output_ciphers = []
-        for i in range(self.no_of_filters):
-            output_cipher = self.evaluator.multiply_plain(input_cipher, self.filter_plain[i])
+        self.evaluator.mod_switch_to_inplace(self.filter_plain, output.parms_id())
+        output_cipher = self.evaluator.multiply_plain(output, self.filter_plain)
 
-            self.evaluator.relinearize_inplace(output_cipher, self.relin_keys)
-            self.evaluator.rescale_to_next_inplace(output_cipher)
-            output_cipher.scale(2**50)
+        self.evaluator.relinearize_inplace(output_cipher, self.relin_keys)
+        self.evaluator.rescale_to_next_inplace(output_cipher)
+        output_cipher.scale(2**50)
 
-            # print(self.ckks_encoder.decode(self.decryptor.decrypt(output_cipher)))
-            # print(self.ckks_encoder.decode(self.decryptor.decrypt(self.evaluator.rotate_vector(output_cipher, 55, self.galois_keys))))
+        output_cipher = self.evaluator.add(output_cipher, self.evaluator.rotate_vector(output_cipher, self.input_size, self.galois_keys))
+        output_cipher = self.evaluator.add(output_cipher, self.evaluator.rotate_vector(output_cipher, 1, self.galois_keys))
+        self.evaluator.mod_switch_to_inplace(self.biases_plain, output_cipher.parms_id())
+        output_cipher = self.evaluator.add_plain(output_cipher, self.biases_plain)
+        output_cipher = self.Encrypted_ReLU(output_cipher)
 
-            # Addition 1
-
-            output_cipher = self.evaluator.add(output_cipher, self.evaluator.rotate_vector(output_cipher, self.input_size, self.galois_keys))
-
-            output_cipher = self.evaluator.add(output_cipher, self.evaluator.rotate_vector(output_cipher, 1, self.galois_keys))
-
-            # print(self.ckks_encoder.decode(self.decryptor.decrypt(output_cipher)))
-            # Final Addition
-            # print(self.ckks_encoder.decode(self.decryptor.decrypt(self.evaluator.rotate_vector(output_cipher, 752, self.galois_keys))))
-            self.evaluator.mod_switch_to_inplace(self.biases_plain[i], output_cipher.parms_id())
-            self.evaluator.add_plain_inplace(output_cipher, self.biases_plain[i])
-            # if(i == 0):
-            #     print("Level before Relued")
-            #     Level_Checker(output_cipher.parms_id(), self.context)
-
-            output_cipher = self.Encrypted_ReLU(output_cipher)
-            # if(i == 0):
-            #     print("Level After Relued")
-            #     Level_Checker(output_cipher.parms_id(), self.context)
-            output_ciphers.append(output_cipher)
-            del output_cipher
-        # end = time.time()
-
-        # print(f"Total Time Taken in Convolution is: {end-start} seconds")
-        return output_ciphers, self.output_size, self.output_gap
-        # print(self.ckks_encoder.decode(self.decryptor.decrypt(self.evaluator.rotate_vector(output_cipher, 4, self.galois_keys))))
+        return output_cipher, self.total, self.output_size, self.output_gap
 
 
 # Finished at 29/03/22 #
@@ -170,3 +174,7 @@ class Convolution:
 # Finished with major changes on 31/03/22 #
 # at 1:12 PM #
 # Performance issue seems to be solved by using stride 2 with cleverly constructed
+# ........................ #
+# Fast Model prediction increase more than 1 second #
+# Completed On 26/04/2022 #
+# At 11;23 AM #
