@@ -1,5 +1,5 @@
 # CNN Encrypted
-This code from my work on **Privacy Preserving Malicious Nework Traffic Detection Using Fully Homomorphic CNN** for my MS Thesis. 
+This is code from my work on **Privacy Preserving Malicious Nework Traffic Detection Using Fully Homomorphic CNN** for my MS Thesis. 
 It was a great struggle because there is not much information availale about componets used in an Encrypted model and also in this work need for preparing
 a new version according to thesis work arised.
 This is not very organized code and I will keep working to improve this code in much easy to understand form along with other necessary documents additions.
@@ -19,3 +19,4 @@ Regards:
 ***
 A faster version as **CNN Encrypted Faster**  is at branch
 https://github.com/Arman001/CNN_Encrypted/tree/encrypted_cnn_faster
+***
