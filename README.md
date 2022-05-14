@@ -17,6 +17,8 @@ Regards:
 
 ***
 ### CKKS Scheme
+Python wrapper of Microsoft SEAL from https://github.com/Huelse/SEAL-Python is used
+
 ![image](https://user-images.githubusercontent.com/21517793/168409379-9b600ae1-d475-4c42-b5ee-e032c3cf6eed.png)
 
 ***
