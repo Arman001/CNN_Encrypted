@@ -1,8 +1,7 @@
 # CNN Encrypted
 This is code from my work on **Privacy Preserving Malicious Nework Traffic Detection Using Fully Homomorphic CNN** for my MS Thesis. 
 
-It was a great struggle because there is not much information available about componets used in an Encrypted model and also in this work need for preparing
-a new version according to thesis work arised.
+This work is prepared while keeping in requirements of thesis.
 
 This is not very organized code and I will keep working to improve this code in much easy to understand form along with other necessary documents additions.
 
