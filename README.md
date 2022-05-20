@@ -1,4 +1,4 @@
-# CNN_Bacth_Encrypted
+# Batch CNN Encrypted 
 
 - This is CNN model is best on working batch predictions.
 
