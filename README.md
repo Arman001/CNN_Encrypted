@@ -7,7 +7,7 @@ This is not very organized code and I will keep working to improve this code in 
 
 An improved faster version is abailable at branch [cnn_encrypted_faster](https://github.com/Arman001/CNN_Encrypted/tree/encrypted_cnn_faster) 
 
-There is also a model that I specifically created for batch predictions and it very good at large number of prediction it can be found at branch [cnn_batch_encrypted](https://github.com/Arman001/CNN_Encrypted/tree/encrypted_cnn_faster)
+There is also a model that I specifically created for batch predictions and it very good at large number of prediction it can be found at branch [cnn_batch_encrypted](https://github.com/Arman001/CNN_Encrypted/tree/cnn_batch_encrypted)
 
 Some mistakes will still be in code along with improvements chances, so this work will continue.
 
